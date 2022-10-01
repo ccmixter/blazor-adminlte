@@ -5,11 +5,11 @@
 @inject NavBarLeftInjectableMenu navBarLeftInjectableMenu
 <NavBar>
     <NavBarLeft>
-        @if (!navBarLeftInjectableMenu.OverrideParentContent)
+        @*@if (!navBarLeftInjectableMenu.OverrideParentContent)
         {
             <NavBarMenuItem Link="/">Home</NavBarMenuItem>
             <NavBarMenuItem OnClick="HandleContent">Content</NavBarMenuItem><!-- defaults to # -->
-        }
+        }*@
         @navBarLeftInjectableMenu.content <!-- Injectable for custom menu content per page -->
     </NavBarLeft>
     <NavBarSearch></NavBarSearch>
@@ -73,7 +73,7 @@
     </NavBarRight>
 </NavBar>
 <SideBarContainer>
-    <BrandLogo Link="https://adminlte.io/" Logo="_content/Blazor.AdminLte.Site.Shared/dist/img/AdminLTELogo.png">AdminLTE 3</BrandLogo>
+    <BrandLogo Link="./">REMIXTER</BrandLogo>
     <SideBar>
         <!-- Sidebar user panel (optional) -->
         <SideBarUserPanel ImageEffect="ImageEffect.Circle" Link="starter-pages/user-page" Elevation="Elevation.Three" UserImage="_content/Blazor.AdminLte.Site.Shared/dist/img/user2-160x160.jpg">Alexander Pierce</SideBarUserPanel>
