@@ -1,5 +1,7 @@
 ﻿@page "/register"
+@using Security.Abstractions.Models.Accounts;
 @inject NavigationManager NavigationManager
+@inject IUserApiClient UserApiClient
 <!-- note: using styles, not css, we will target Isolated CSS for this component when we upgrade to .NET5 -->
 <Overlay>
     <div style=" margin: 0 auto; margin-top: 10%; max-width: 400px;">
@@ -20,14 +22,23 @@
                             <div class="col-8">
                                     <CustomCheckbox @bind-Value="isAgreeTos" />
                             </div>
-
+                        @if (captchaGenerateResponse != null)
+                        {
+                            <img src="@captchaGenerateResponse.Image" />
+                            <Input @bind-Value="captchaKey" />
+                        }
                             <div class="col-4">
                                 <Button OnClick="OnRegister">Register</Button>
                             </div>
 
                         </div>
 @*                    </form>*@
-                    <div class="social-auth-links text-center">
+@if (!string.IsNullOrEmpty(alertBody)) {
+                    <Alert Type="AlertType.Danger" Title="@alertTitle">
+                            @((MarkupString)alertBody)
+                    </Alert>
+}
+@*                    <div class="social-auth-links text-center">
                         <p>- OR -</p>
                         <a href="#" class="btn btn-block btn-primary">
                             <i class="fab fa-facebook mr-2"></i>
@@ -37,7 +48,7 @@
                             <i class="fab fa-google-plus mr-2"></i>
                             Sign up using Google+
                         </a>
-                    </div>
+                    </div>*@
                     <a href="login" class="text-center">I already have a membership</a>
                 </div>
 
@@ -46,16 +57,57 @@
     </div>
 </Overlay>
 @code {
-    InputState fullName = new InputState() { Identifier = "fullName", Placeholder = "Enter Full Name", Type = "text", Icon = "fas fa-user" };
+    string alertBody;
+    string alertTitle;
+
+    CaptchaGenerateResponse captchaGenerateResponse;
+
+
+    InputState fullName = new InputState() { Identifier = "fullName", Placeholder = "Enter Full Name", Type = "text", Icon = "fas fa-user",IconBgColor=Color.Info };
     InputState email = new InputState() { Identifier = "email", Placeholder = "Enter email", Type = "email", Icon = "fas fa-envelope" };
     InputState password = new InputState() { Identifier = "password", Placeholder = "Enter password", Type = "password", Icon = "fas fa-lock" };
     InputState passwordVerify = new InputState() { Identifier = "passwordVerify", Placeholder = "Verify password", Type = "password", Icon = "fas fa-lock" };
+    InputState captchaKey = new InputState() { Identifier = "captchaKey", Placeholder = "Enter Captcha", Type = "text", Icon = "fas fa-sync", IconBgColor= Color.Warning };
     CustomCheckboxState isAgreeTos = new CustomCheckboxState()
         {
             Identifier = "isAgreeTos",
             Value = "true",
-            Label = "I agree to the <a href='#'>terms</a>" };
-    void OnRegister() {
-        NavigationManager.NavigateTo("thanks-for-registering");
+            Label = "I agree to the <a href='#'>terms</a>" 
+        };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        captchaGenerateResponse = await UserApiClient.CaptchaAsync();
+        StateHasChanged();
+    }
+
+    async void OnRegister() {
+        try
+        {
+            await UserApiClient.RegisterAsync(new RegisterRequest()
+                {
+                    AcceptTerms = true,
+                    Email = email.Value,
+                    FirstName = fullName.Value,
+                    LastName = "bla",
+                    Title = "",
+                    Password = password.Value,
+                    ConfirmPassword = passwordVerify.Value
+                });
+            NavigationManager.NavigateTo("thanks-for-registering");
+        }
+        catch (ApiException ex)
+        {
+            var l = ex.ResponseObject;
+            alertTitle = l.Title;
+            alertBody = "";
+            email.Validate(l.Errors.Email);
+            password.Validate(l.Errors.Password);
+            fullName.Validate(l.Errors.FirstName);
+            passwordVerify.Validate(l.Errors.ConfirmPassword);
+            StateHasChanged();
+        }
     }
 }
